@@ -70,7 +70,7 @@ def get_grid(gridname,nbinsAs=100,nbins = 50):
         ------
         gridname : The name of grid associated to the sim
         nbinsAs : number of bins for As (default is 100)
-        nbinsAs : number of bins for Om and h (default is 50)
+        nbins : number of bins for Om and h (default is 50)
 
         Outputs
         ------
@@ -373,7 +373,7 @@ def lnprob(theta, xdata, ydata, Cinv, free_para, fix_para,bounds,fiducial, Grid,
 
 if __name__ ==  "__main__":
 
-    # Table of cosmological parameters according to seems
+    # Table of cosmological parameters according to sims
 
     dfcosmo = pd.read_csv(opa.join(INPATH,'DataFrameCosmosims.csv'),index_col=0)
     simtype = "LightConeDida"
@@ -511,7 +511,9 @@ if __name__ ==  "__main__":
         free_ml  =  result["x"]
 
         minchi2  =  result["fun"]
-        
+        if masktriangle == None:
+            masktriangle = [0]
+
         dof = len(xdata) + sum(masktriangle) - ndim
     
         np.savetxt(opa.join(OUTPATH,"minchi2%sbox_%skmax_%s.txt")%(runtype,boxnumber,kmax),np.concatenate([free_ml,[minchi2,dof]]))
@@ -523,7 +525,7 @@ if __name__ ==  "__main__":
        # Set up the sampler.
  
 
-    Nchains  =  4
+    Nchains  =  2
     nwalkers  =  2*26
     fidpos = np.concatenate([ [ lnAs_fid,   Om_fid,   h_fid],  free_ml[3:]])
 
@@ -531,10 +533,10 @@ if __name__ ==  "__main__":
     # Start MCMC
     t0 = time.time()
     temperature  =  1.
-    minlength  =  4000
-    ichaincheck  =  50
+    minlength  =  1
+    ichaincheck  =  1
     ithin  =  1
-    epsilon  =  0.06
+    epsilon  =  0.66
     # Set up the sampler.
     pos = []
     sampler = []
@@ -554,7 +556,7 @@ if __name__ ==  "__main__":
             if accepted:
                 initialpos.append(trialfiducial)
         pos.append(initialpos)
-        sampler.append(emcee.EnsembleSampler(nwalkers, ndim, lnprob,a = 1.15, args = (xdata, ydata, Cinv, free_para, fix_para,fiducial, interpolation_grid),kwargs={'binning':binning,'window':window,'withBisp':withBisp},threads = 16))
+        sampler.append(emcee.EnsembleSampler(nwalkers, ndim, lnprob,a = 1.15, args = (xdata, ydata, Cinv, free_para, fix_para,fiducial, interpolation_grid),kwargs={'binning':binning,'window':window,'withBisp':withBisp},threads = 4))
         
     np.save(opa.join(OUTPATH,"inipos%sbox_%skmax_%s")%(runtype,boxnumber,kmax),np.array(pos))
     # Start MCMC
@@ -569,15 +571,20 @@ if __name__ ==  "__main__":
     itercounter  =  0
     chainstep  =  minlength
     loopcriteria  =  1
+    print("About to start loopcriteria thingy")
     while loopcriteria:
         
         itercounter  =  itercounter + chainstep
         print("chain length  = ",itercounter," minlength  = ",minlength)
         samplesJG = []
+        print("Going into loop for chains")
         for jj in range(0, Nchains):
             # Since we write the chain to a file we could put storechain = False, but in that case
             # the function sampler.get_autocorr_time() below will give an error
-            for result in sampler[jj].sample(pos[jj], iterations = chainstep, rstate0 = rstate, storechain = True, thin = ithin):
+            print("In loop for chains, advancing sampler")
+            #change iterations = 1 back to iterations = chainstep
+            for result in sampler[jj].sample(pos[jj], iterations = 1, rstate0 = rstate, storechain = True, thin = ithin):
+                print("Advanced the sampler successfully")
                 pos[jj]  =  result[0]
                 chainchi2  =  -2.*result[1]
                 rstate  =  result[2]
@@ -589,6 +596,7 @@ if __name__ ==  "__main__":
             withinchainvar[jj]  =  np.var(chainsamples, axis = 0)
             meanchain[jj]  =  np.mean(chainsamples, axis = 0)
             samplesJG.append(chainsamples)
+            print(jj)
         scalereduction  =  gelman_rubin_convergence(withinchainvar, meanchain, itercounter/2, Nchains, ndim)
         print("scalereduction  =  ", scalereduction)
         
