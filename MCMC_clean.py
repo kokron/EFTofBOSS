@@ -546,7 +546,7 @@ if __name__ ==  "__main__":
         pool.wait()
         sys.exit(0)
 
-    Nchains  =  2
+    Nchains  = 4 
     nwalkers  =  2*26
     fidpos = np.concatenate([ [ lnAs_fid,   Om_fid,   h_fid],  free_ml[3:]])
 
@@ -554,10 +554,10 @@ if __name__ ==  "__main__":
     # Start MCMC
     t0 = time.time()
     temperature  =  1.
-    minlength  =  10
-    ichaincheck  =  1
+    minlength  = 4000 
+    ichaincheck  = 50 
     ithin  =  1
-    epsilon  =  1.66
+    epsilon  =  0.06
     # Set up the sampler.
     pos = []
     sampler = []
