@@ -29,13 +29,27 @@ from emcee.utils import MPIPool
 # Save this path (expect data and other needed executables present in relative paths!!!)
 THIS_PATH  =  opa.dirname(__file__)
 
+#SET UP LOCAL OR CLUSTER RUN
+#Options are 'local' or 'sherlock'
+arg = sys.argv[1]
+
+if arg == '-local':
+    INPATH=opa.abspath(opa.join(THIS_PATH,'input')) 
+    INPATH_2 = INPATH 
+elif arg == '-sherlock':
+    INPATH=opa.abspath(opa.join(THIS_PATH,'input')) 
+    INPATH_2 = opa.abspath('/scratch/users/kokron/')
+else: 
+    raise Exception("Must run with either '-arg' or '-sherlock' as options!")
+    
 # Import local packages (to be saved in same folder)
 import APpowerspectraNkmu
 import WindowFFTlog
 
 # Data paths
-INPATH=opa.abspath(opa.join(THIS_PATH,'input')) 
+
 OUTPATH = opa.abspath(opa.join(THIS_PATH,'output')) 
+
 
 
 
@@ -79,7 +93,7 @@ def get_grid(gridname,nbinsAs=100,nbins = 50):
         The min,max values for the three parameters as well as the interpolation for the linear and loop power spectra
     """
     
-    thetatab = np.load(opa.abspath(opa.join(INPATH,'GridsEFT/Tablecoord%s.npy'%gridname)))
+    thetatab = np.load(opa.abspath(opa.join(INPATH_2,'GridsEFT/Tablecoord%s.npy'%gridname)))
 
     theta3D = thetatab.reshape((nbinsAs,nbins,nbins,3))
 
@@ -95,8 +109,8 @@ def get_grid(gridname,nbinsAs=100,nbins = 50):
     hmin = htab.min()
     hmax = htab.max()
 
-    TablePlin = np.load(opa.abspath(opa.join(INPATH,'GridsEFT/TablePlin%s.npy'%gridname)))
-    TablePloop = np.load(opa.abspath(opa.join(INPATH,'GridsEFT/TablePloop%s.npy'%gridname)))
+    TablePlin = np.load(opa.abspath(opa.join(INPATH_2,'GridsEFT/TablePlin%s.npy'%gridname)))
+    TablePloop = np.load(opa.abspath(opa.join(INPATH_2,'GridsEFT/TablePloop%s.npy'%gridname)))
 
     Plininterp = scipy.interpolate.RegularGridInterpolator((lnAstab,Omtab,htab),TablePlin.reshape((nbinsAs,nbins,nbins,TablePlin.shape[-2],TablePlin.shape[-1])))
     Ploopinterp = scipy.interpolate.RegularGridInterpolator((lnAstab,Omtab,htab),TablePloop.reshape((nbinsAs,nbins,nbins,TablePloop.shape[-2],TablePloop.shape[-1])))
