@@ -605,12 +605,12 @@ if __name__ ==  "__main__":
             print("In loop for chains, advancing sampler")
             #change iterations = 1 back to iterations = chainstep
             # print(sampler[jj].shape)
-            for result in sampler[jj].sample(pos[jj], iterations = 2, rstate0 = rstate, storechain = True, thin = ithin):
+            for result in sampler[jj].sample(pos[jj], iterations = chainstep, rstate0 = rstate, storechain = True, thin = ithin):
                 print("Advanced the sampler successfully")
                 pos[jj]  =  result[0]
                 chainchi2  =  -2.*result[1]
                 rstate  =  result[2]
-
+            prit("Errors here?, doing convergence test")
             # we do the convergence test on the second half of the current chain (itercounter/2)
             chainsamples  =  sampler[jj].chain[:, itercounter/2:, :].reshape((-1, ndim))
             #print("len chain  =  ", chainsamples.shape)
