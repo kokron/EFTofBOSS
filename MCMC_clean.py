@@ -237,7 +237,7 @@ def lnprior(theta, free_para, fix_para,bounds):
      return -np.inf
 
 
-def lnlike(theta, xdata, ydata, Cinv, free_para, fix_para,bounds,fiducial, interpolation_grid,binning=False,TableNkmu=None, window=True,dataQ=None,withBisp=False,masktriangle=None,Bispdata=None):
+def lnlike(theta, xdata, ydata, Cinv, free_para, fix_para,bounds,fiducial,binning=False,TableNkmu=None, window=True,dataQ=None,withBisp=False,masktriangle=None,Bispdata=None):
     
     """ Computes the log of the likelihood
 
@@ -251,7 +251,7 @@ def lnlike(theta, xdata, ydata, Cinv, free_para, fix_para,bounds,fiducial, inter
     fix_para : list of the values for the fixed parameters
     bounds : 2d array with the [min,max] values for the parameters
     fiducial : the value of cosmological parameters on the fiducial (for AP effect)
-    interpolation_grid : the interpolation of the power spectra on the grid. Include the bispectrum if considered
+    interpolation_grid : the interpolation of the power spectra on the grid. Include the bispectrum if considered (CURRENTLY A GLOBAL TO TEST PICKLING)
     binning : whether to take into account the discreteness of the data power spectra. Must provide a number of modes per bin in TableNkmu
     TableNkmu : the number of modes per (k,mu) bin. Expected to be of the type kmean, mucentral, Nkmu
     window : whether to take into account the window function (when not a periodic square box, such as Lightcone). Must provide the data for the Q matrices (see e.g. section 4.3.2 of arXiv:1706.02362)
@@ -333,7 +333,7 @@ def lnlike(theta, xdata, ydata, Cinv, free_para, fix_para,bounds,fiducial, inter
     return -0.5*chi2
 
 
-def lnprob(theta, xdata, ydata, Cinv, free_para, fix_para,bounds,fiducial, Grid,binning=False,TableNkmu=None, window=True,dataQ=None):
+def lnprob(theta, xdata, ydata, Cinv, free_para, fix_para,bounds,fiducial,binning=False,TableNkmu=None, window=True,dataQ=None,withBisp=False,masktriangle=None,Bispdata=None):
    
     """ Computes the log of the probability (logprior + loglike)
 
@@ -347,7 +347,7 @@ def lnprob(theta, xdata, ydata, Cinv, free_para, fix_para,bounds,fiducial, Grid,
     fix_para : list of the values for the fixed parameters
     fiducial : the value of cosmological parameters on the fiducial (for AP effect)
     bounds : 2d array with the [min,max] values for the parameters
-    interpolation_grid : the interpolation of the power spectra on the grid
+    interpolation_grid : the interpolation of the power spectra on the grid (CURRENTLY A GLOBAL TO TEST PICKLING)
     binning : whether to take into account the discreteness of the data power spectra. Must provide a number of modes per bin in TableNkmu
     TableNkmu : the number of modes per (k,mu) bin. Expected to be of the type kmean, mucentral, Nkmu
     window : whether to take into account the window function (when not a periodic square box, such as Lightcone). Must provide the data for the Q matrices (see e.g. section 4.3.2 of arXiv:1706.02362)
@@ -362,7 +362,7 @@ def lnprob(theta, xdata, ydata, Cinv, free_para, fix_para,bounds,fiducial, Grid,
     if np.isfinite(lp) == False :
         dummy  =  -np.inf
         
-    dummy  =  lp + lnlike(theta, xdata, ydata, Cinv, free_para, fix_para,bounds,fiducial, Grid,binning=False,TableNkmu=None, window=True,dataQ=None)
+    dummy  =  lp + lnlike(theta, xdata, ydata, Cinv, free_para, fix_para,bounds,fiducial, binning,TableNkmu, window,dataQ,withBisp,masktriangle,Bispdata)
 
     return dummy
 
@@ -473,7 +473,8 @@ if __name__ ==  "__main__":
     
             all_true  =  np.concatenate(([lnAs_fid, Om_fid, h_fid],inipos))
             all_name  =  np.concatenate(([r'$A_s$',r'$\Omega_m$',r'$h$'],[r'$b_%s$'%i for i in range(len(inipos))]))
-            free_para  =  True, True, True,True, True, True,True, True, True,True, True, True,True,False
+            #changed all to free because something was borked af
+            free_para  =  True, True, True,True, True, True,True, True, True,True, True, True,True, True
             
             nparam = len(free_para)
             
@@ -505,7 +506,7 @@ if __name__ ==  "__main__":
     #################################
 
         
-        chi2  =  lambda theta: -2 * lnlike(theta,xdata, ydata, Cinv, free_para, fix_para,bounds,fiducial, interpolation_grid,binning=binning,window=window,withBisp=withBisp,dataQ=dataQ)
+        chi2  =  lambda theta: -2 * lnlike(theta,xdata, ydata, Cinv, free_para, fix_para,bounds,fiducial,binning=binning,window=window,withBisp=withBisp,dataQ=dataQ)
     
 
         result  =  op.minimize(chi2, all_true,method = 'SLSQP',bounds = bounds,options = {'maxiter':100})
@@ -539,10 +540,10 @@ if __name__ ==  "__main__":
     # Start MCMC
     t0 = time.time()
     temperature  =  1.
-    minlength  =  1
+    minlength  =  10
     ichaincheck  =  1
     ithin  =  1
-    epsilon  =  0.66
+    epsilon  =  1.66
     # Set up the sampler.
     pos = []
     sampler = []
@@ -562,7 +563,7 @@ if __name__ ==  "__main__":
             if accepted:
                 initialpos.append(trialfiducial)
         pos.append(initialpos)
-        sampler.append(emcee.EnsembleSampler(nwalkers, ndim, lnprob,a = 1.15, args = (xdata, ydata, Cinv, free_para, fix_para,fiducial, interpolation_grid),kwargs={'binning':binning,'window':window,'withBisp':withBisp},threads = 1, pool=pool))
+        sampler.append(emcee.EnsembleSampler(nwalkers, ndim, lnprob, a = 1.15, args = (xdata, ydata, Cinv, free_para, fix_para,bounds, fiducial), kwargs={'binning':binning,'window':window,'withBisp':withBisp,'dataQ':dataQ},threads = 1, pool=pool))
         
     np.save(opa.join(OUTPATH,"inipos%sbox_%skmax_%s")%(runtype,boxnumber,kmax),np.array(pos))
     # Start MCMC
@@ -589,13 +590,13 @@ if __name__ ==  "__main__":
             # the function sampler.get_autocorr_time() below will give an error
             print("In loop for chains, advancing sampler")
             #change iterations = 1 back to iterations = chainstep
-            for result in sampler[jj].sample(pos[jj], iterations = 1, rstate0 = rstate, storechain = True, thin = ithin):
+            # print(sampler[jj].shape)
+            for result in sampler[jj].sample(pos[jj], iterations = 2, rstate0 = rstate, storechain = True, thin = ithin):
                 print("Advanced the sampler successfully")
                 pos[jj]  =  result[0]
                 chainchi2  =  -2.*result[1]
                 rstate  =  result[2]
-    
-    
+
             # we do the convergence test on the second half of the current chain (itercounter/2)
             chainsamples  =  sampler[jj].chain[:, itercounter/2:, :].reshape((-1, ndim))
             #print("len chain  =  ", chainsamples.shape)
@@ -613,6 +614,7 @@ if __name__ ==  "__main__":
 
         chainstep  =  ichaincheck
 
+    pool.close()
     print("Done.")
     trun = time.time()-t0
     print(trun)
@@ -642,5 +644,3 @@ if __name__ ==  "__main__":
     mcmc_array  =  map(lambda v: (v[1], v[2]-v[1], v[1]-v[0], v[4]-v[1], v[1]-v[3]), zip(*np.percentile(np.array(samplesJG).reshape((-1,ndim)), [15.86555, 50, 84.13445, 2.2775, 97.7225], axis = 0)))
 
     np.savetxt(opa.join(OUTPATH,"mcmcarray%sbox_%skmax_%s.txt")%(runtype,boxnumber,kmax),mcmc_array)
-
-    pool.close()
