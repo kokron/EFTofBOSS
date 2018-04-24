@@ -7,6 +7,7 @@
 from __future__ import print_function
 
 import os
+import sys
 os.environ["TMPDIR"] = "/tmp"
 import emcee
 import numpy as np
@@ -17,6 +18,7 @@ import pandas as pd
 import os.path as opa
 import time
 from scipy import stats
+from emcee.utils import MPIPool
 
 ###########################################
 ###  Globals ##############################
@@ -523,7 +525,11 @@ if __name__ ==  "__main__":
     ###################################
 
        # Set up the sampler.
- 
+    #setting up MPI pool to go with sampler
+    pool = MPIPool()
+    if not pool.is_master():
+        pool.wait()
+        sys.exit(0)
 
     Nchains  =  2
     nwalkers  =  2*26
@@ -556,7 +562,7 @@ if __name__ ==  "__main__":
             if accepted:
                 initialpos.append(trialfiducial)
         pos.append(initialpos)
-        sampler.append(emcee.EnsembleSampler(nwalkers, ndim, lnprob,a = 1.15, args = (xdata, ydata, Cinv, free_para, fix_para,fiducial, interpolation_grid),kwargs={'binning':binning,'window':window,'withBisp':withBisp},threads = 4))
+        sampler.append(emcee.EnsembleSampler(nwalkers, ndim, lnprob,a = 1.15, args = (xdata, ydata, Cinv, free_para, fix_para,fiducial, interpolation_grid),kwargs={'binning':binning,'window':window,'withBisp':withBisp},threads = 1, pool=pool))
         
     np.save(opa.join(OUTPATH,"inipos%sbox_%skmax_%s")%(runtype,boxnumber,kmax),np.array(pos))
     # Start MCMC
@@ -637,3 +643,4 @@ if __name__ ==  "__main__":
 
     np.savetxt(opa.join(OUTPATH,"mcmcarray%sbox_%skmax_%s.txt")%(runtype,boxnumber,kmax),mcmc_array)
 
+    pool.close()
