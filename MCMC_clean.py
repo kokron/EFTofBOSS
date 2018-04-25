@@ -488,7 +488,7 @@ if __name__ ==  "__main__":
             all_true  =  np.concatenate(([lnAs_fid, Om_fid, h_fid],inipos))
             all_name  =  np.concatenate(([r'$A_s$',r'$\Omega_m$',r'$h$'],[r'$b_%s$'%i for i in range(len(inipos))]))
             #changed all to free because something was borked af, looks like this is fixed, testing
-            free_para  =  True, True, True,True, True, True,True, True, True,True, True, True,True, False
+            free_para  =  [True, True, True,True, True, True,True, True, True,True, True, True,True, False]
             
             nparam = len(free_para)
             
@@ -524,14 +524,15 @@ if __name__ ==  "__main__":
     
 
         result  =  op.minimize(chi2, all_true,method = 'SLSQP',bounds = bounds,options = {'maxiter':100})
+        all_ml = result["x"]
 
-        free_ml  =  result["x"]
+        free_ml  =  all_ml[free_para]
 
         minchi2  =  result["fun"]
         if masktriangle == None:
-            masktriangle = [0]
-
-        dof = len(xdata) + sum(masktriangle) - ndim
+            dof = len(xdata) - ndim
+        else:
+            dof = len(xdata) + sum(masktriangle) - ndim
     
         np.savetxt(opa.join(OUTPATH,"minchi2%sbox_%skmax_%s.txt")%(runtype,boxnumber,kmax),np.concatenate([free_ml,[minchi2,dof]]))
     
@@ -573,11 +574,14 @@ if __name__ ==  "__main__":
             accepted  =  False
             while (not accepted):
                 trialfiducial  =  np.random.normal(loc = free_ml,scale =  temperature*onesigma[free_para])
+                # print(trialfiducial)
+                # print(trialfiducial.shape)
+                # brakhere
                 accepted  =  np.isfinite(lnprior(trialfiducial, free_para, fix_para,bounds))
             if accepted:
                 initialpos.append(trialfiducial)
         pos.append(initialpos)
-        sampler.append(emcee.EnsembleSampler(nwalkers, ndim, lnprob, a = 1.15, args = (xdata, ydata, Cinv, free_para, fix_para,bounds, fiducial), kwargs={'binning':binning,'window':window,'withBisp':withBisp,'dataQ':dataQ, 'masktriangle':masktriangle,'TableNkmu':TableNkmu,'Bispdata':Bispdata},threads = 1, pool=pool))
+        sampler.append(emcee.EnsembleSampler(nwalkers, ndim, lnprob, a = 1.15, args = (xdata, ydata, Cinv, free_para, fix_para,bounds, fiducial), kwargs={'binning':binning,'window':window,'withBisp':withBisp,'dataQ':dataQ, 'masktriangle':masktriangle},threads = 1, pool=pool))
         
     np.save(opa.join(OUTPATH,"inipos%sbox_%skmax_%s")%(runtype,boxnumber,kmax),np.array(pos))
     # Start MCMC
