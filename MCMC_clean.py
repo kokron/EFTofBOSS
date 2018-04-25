@@ -547,7 +547,7 @@ if __name__ ==  "__main__":
         sys.exit(0)
 
     Nchains  = 4 
-    nwalkers  =  2*26
+    nwalkers  =  2*nparam
     fidpos = np.concatenate([ [ lnAs_fid,   Om_fid,   h_fid],  free_ml[3:]])
 
 
@@ -557,7 +557,7 @@ if __name__ ==  "__main__":
     minlength  = 2000 
     ichaincheck  = 50 
     ithin  =  1
-    epsilon  =  1.06
+    epsilon  =  0.06
     # Set up the sampler.
     pos = []
     sampler = []
@@ -572,12 +572,12 @@ if __name__ ==  "__main__":
         for ii in xrange(nwalkers):
             accepted  =  False
             while (not accepted):
-                trialfiducial  =  np.random.normal(loc = free_ml,scale =  temperature*onesigma)
+                trialfiducial  =  np.random.normal(loc = free_ml,scale =  temperature*onesigma[free_para])
                 accepted  =  np.isfinite(lnprior(trialfiducial, free_para, fix_para,bounds))
             if accepted:
                 initialpos.append(trialfiducial)
         pos.append(initialpos)
-        sampler.append(emcee.EnsembleSampler(nwalkers, ndim, lnprob, a = 1.15, args = (xdata, ydata, Cinv, free_para, fix_para,bounds, fiducial), kwargs={'binning':binning,'window':window,'withBisp':withBisp,'dataQ':dataQ},threads = 1, pool=pool))
+        sampler.append(emcee.EnsembleSampler(nwalkers, ndim, lnprob, a = 1.15, args = (xdata, ydata, Cinv, free_para, fix_para,bounds, fiducial), kwargs={'binning':binning,'window':window,'withBisp':withBisp,'dataQ':dataQ, 'masktriangle':masktriangle,'TableNkmu':TableNkmu,'Bispdata':Bispdata},threads = 1, pool=pool))
         
     np.save(opa.join(OUTPATH,"inipos%sbox_%skmax_%s")%(runtype,boxnumber,kmax),np.array(pos))
     # Start MCMC
@@ -602,7 +602,7 @@ if __name__ ==  "__main__":
         for jj in range(0, Nchains):
             # Since we write the chain to a file we could put storechain = False, but in that case
             # the function sampler.get_autocorr_time() below will give an error
-            print("In loop for chains, advancing sampler")
+            # print("In loop for chains, advancing sampler")
             #change iterations = 1 back to iterations = chainstep
             # print(sampler[jj].shape)
             for result in sampler[jj].sample(pos[jj], iterations = chainstep, rstate0 = rstate, storechain = True, thin = ithin):
@@ -610,14 +610,15 @@ if __name__ ==  "__main__":
                 pos[jj]  =  result[0]
                 chainchi2  =  -2.*result[1]
                 rstate  =  result[2]
-            print("Errors here?, doing convergence test")
+            # print("Errors here?, doing convergence test")
             # we do the convergence test on the second half of the current chain (itercounter/2)
             chainsamples  =  sampler[jj].chain[:, itercounter/2:, :].reshape((-1, ndim))
             #print("len chain  =  ", chainsamples.shape)
             withinchainvar[jj]  =  np.var(chainsamples, axis = 0)
             meanchain[jj]  =  np.mean(chainsamples, axis = 0)
             samplesJG.append(chainsamples)
-            print(jj)
+            np.save(opa.join(OUTPATH,"ChainsMidway/samplerchainmid%sbox_%skmax_%srun_%s")%(runtype,boxnumber,kmax,jj),sampler[jj].chain[:20,::10,:])
+            # print(jj)
         scalereduction  =  gelman_rubin_convergence(withinchainvar, meanchain, itercounter/2, Nchains, ndim)
         print("scalereduction  =  ", scalereduction)
         
