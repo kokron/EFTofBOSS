@@ -554,10 +554,10 @@ if __name__ ==  "__main__":
     # Start MCMC
     t0 = time.time()
     temperature  =  1.
-    minlength  = 4000 
+    minlength  = 2000 
     ichaincheck  = 50 
     ithin  =  1
-    epsilon  =  0.06
+    epsilon  =  1.06
     # Set up the sampler.
     pos = []
     sampler = []
@@ -606,11 +606,11 @@ if __name__ ==  "__main__":
             #change iterations = 1 back to iterations = chainstep
             # print(sampler[jj].shape)
             for result in sampler[jj].sample(pos[jj], iterations = chainstep, rstate0 = rstate, storechain = True, thin = ithin):
-                print("Advanced the sampler successfully")
+                #print("Advanced the sampler successfully")
                 pos[jj]  =  result[0]
                 chainchi2  =  -2.*result[1]
                 rstate  =  result[2]
-            prit("Errors here?, doing convergence test")
+            print("Errors here?, doing convergence test")
             # we do the convergence test on the second half of the current chain (itercounter/2)
             chainsamples  =  sampler[jj].chain[:, itercounter/2:, :].reshape((-1, ndim))
             #print("len chain  =  ", chainsamples.shape)
