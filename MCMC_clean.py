@@ -487,8 +487,8 @@ if __name__ ==  "__main__":
     
             all_true  =  np.concatenate(([lnAs_fid, Om_fid, h_fid],inipos))
             all_name  =  np.concatenate(([r'$A_s$',r'$\Omega_m$',r'$h$'],[r'$b_%s$'%i for i in range(len(inipos))]))
-            #changed all to free because something was borked af
-            free_para  =  True, True, True,True, True, True,True, True, True,True, True, True,True, True
+            #changed all to free because something was borked af, looks like this is fixed, testing
+            free_para  =  True, True, True,True, True, True,True, True, True,True, True, True,True, False
             
             nparam = len(free_para)
             
@@ -554,7 +554,7 @@ if __name__ ==  "__main__":
     # Start MCMC
     t0 = time.time()
     temperature  =  1.
-    minlength  = 2000 
+    minlength  = 4000 
     ichaincheck  = 50 
     ithin  =  1
     epsilon  =  0.06
@@ -602,7 +602,7 @@ if __name__ ==  "__main__":
         for jj in range(0, Nchains):
             # Since we write the chain to a file we could put storechain = False, but in that case
             # the function sampler.get_autocorr_time() below will give an error
-            # print("In loop for chains, advancing sampler")
+            print("In loop for chains, advancing sampler")
             #change iterations = 1 back to iterations = chainstep
             # print(sampler[jj].shape)
             for result in sampler[jj].sample(pos[jj], iterations = chainstep, rstate0 = rstate, storechain = True, thin = ithin):
@@ -610,7 +610,7 @@ if __name__ ==  "__main__":
                 pos[jj]  =  result[0]
                 chainchi2  =  -2.*result[1]
                 rstate  =  result[2]
-            # print("Errors here?, doing convergence test")
+            print("Errors here?, doing convergence test")
             # we do the convergence test on the second half of the current chain (itercounter/2)
             chainsamples  =  sampler[jj].chain[:, itercounter/2:, :].reshape((-1, ndim))
             #print("len chain  =  ", chainsamples.shape)
