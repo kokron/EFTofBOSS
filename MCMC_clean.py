@@ -285,66 +285,66 @@ def lnlike(theta, xdata, ydata, Cinv, free_para, fix_para,bounds,fiducial,binnin
     else :
         lnAs,Om,h,b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11 = match_para(theta, free_para, fix_para)
     
-    # Import the power spectra interpolators on the grid
-    if withBisp:
-        Plininterp,Ploopinterp,Bispinterp = interpolation_grid
-    else:
-        Plininterp,Ploopinterp = interpolation_grid 
-        Bispinterp = None
+        # Import the power spectra interpolators on the grid
+        if withBisp:
+            Plininterp,Ploopinterp,Bispinterp = interpolation_grid
+        else:
+            Plininterp,Ploopinterp = interpolation_grid 
+            Bispinterp = None
+            
+        kfull = Ploopinterp((lnAs,Om,h))[:,0]
         
-    kfull = Ploopinterp((lnAs,Om,h))[:,0]
-    
-    if check_if_multipoles_k_array(kfull):
-        kfull = kfull[:len(kfull)/3] 
+        if check_if_multipoles_k_array(kfull):
+            kfull = kfull[:len(kfull)/3] 
+            
+        Ploop = np.swapaxes(Ploopinterp((lnAs,Om,h)).reshape(3,len(kfull),22),axis1 = 1,axis2 = 2)[:,1:,:]
+        Plin = np.swapaxes(Plininterp((lnAs,Om,h)).reshape(3,len(kfull),4),axis1 = 1,axis2 = 2)[:,1:,:]       
+          
+         
+        # Compute the PS       
+        valueb = np.array([b1,b2,b3,b4,b5,b6,b7,b8,b9,b10])        
+        Pmodel = computePS(valueb,Plin,Ploop,kfull,kfull)
         
-    Ploop = np.swapaxes(Ploopinterp((lnAs,Om,h)).reshape(3,len(kfull),22),axis1 = 1,axis2 = 2)[:,1:,:]
-    Plin = np.swapaxes(Plininterp((lnAs,Om,h)).reshape(3,len(kfull),4),axis1 = 1,axis2 = 2)[:,1:,:]       
-      
-     
-    # Compute the PS       
-    valueb = np.array([b1,b2,b3,b4,b5,b6,b7,b8,b9,b10])        
-    Pmodel = computePS(valueb,Plin,Ploop,kfull,kfull)
-    
-    #The AP parameters
-    qperp,qpar = get_AP_param(Om,h,fiducial)
-    
-    if not binning:
-        Pmodel = APpowerspectraNkmu.changetoAPnobinning(Pmodel,kfull,xdata,qperp,qpar)
-    else:
-        if type(TableNkmu) == type(None):
-            raise Exception('You want to account for binning but forgot to provide a TableNkmu (array of shape (3,n)) obtained from the sims/ Can be found in input/TableNkmu')
-        else : Pmodel = APpowerspectraNkmu.changetoAPbinning(Pmodel,kfull,xdata,qperp,qpar,TableNkmu)
-    
-    
-    if window:
-        if type(dataQ) ==  type(None):
-            raise Exception('You want to account for window function but forgot to provide a dataQ (array of shape (8,n)) obtained from the sims. Can be found in input/dataQ')
-        else: Pmodel = WindowFFTlog.transformQ(np.concatenate(Pmodel),xdata,xdata,dataQ,extrap = False)
-    
+        #The AP parameters
+        qperp,qpar = get_AP_param(Om,h,fiducial)
         
-    modelX = np.concatenate(Pmodel)
-                
-    if withBisp:
-        if type(masktriangle) ==  type(None) or type(Bispdata) == type(None) or type(Bispinterp) ==  type(None):
-            raise Exception('You want to use the bispectrum but forgot to provide a mask for the triangle or the data or the interpolation of the Bisp. Can be found in input/')
-        if Cinv.shape[0] != xdata.shape + sum(masktriangle):
-            raise Exception('You want to use the bispectrum but forgot to use the full covariance for power spectrum + Bisp. Can be found in input/Covariance')
-        
-        TermsBisp=Bispinterp((lnAs,Om,h))
-        bval = np.array([1.,b1,b2,b4,b1*b11,b1**2,b1*b2,b1*b4,b1**3,b1**2*b2,b1**2*b4,b8**2])
-        Bisp = 1./(4*np.pi)*np.dot(bval,TermsBisp[3:])
-        
-        modelX = np.concatenate([modelX,Bisp[masktriangle]])
-        ydata = np.concatenate([ydata,Bispdata[masktriangle]])
-        
-    
-    
-    diff  =  (modelX - ydata)
-    step1 = np.dot(Cinv,diff)
+        if not binning:
+            Pmodel = APpowerspectraNkmu.changetoAPnobinning(Pmodel,kfull,xdata,qperp,qpar)
+        else:
+            if type(TableNkmu) == type(None):
+                raise Exception('You want to account for binning but forgot to provide a TableNkmu (array of shape (3,n)) obtained from the sims/ Can be found in input/TableNkmu')
+            else : Pmodel = APpowerspectraNkmu.changetoAPbinning(Pmodel,kfull,xdata,qperp,qpar,TableNkmu)
         
         
-    chi2 = np.dot(diff,step1)
-    return -0.5*chi2
+        if window:
+            if type(dataQ) ==  type(None):
+                raise Exception('You want to account for window function but forgot to provide a dataQ (array of shape (8,n)) obtained from the sims. Can be found in input/dataQ')
+            else: Pmodel = WindowFFTlog.transformQ(np.concatenate(Pmodel),xdata,xdata,dataQ,extrap = False)
+        
+            
+        modelX = np.concatenate(Pmodel)
+                    
+        if withBisp:
+            if type(masktriangle) ==  type(None) or type(Bispdata) == type(None) or type(Bispinterp) ==  type(None):
+                raise Exception('You want to use the bispectrum but forgot to provide a mask for the triangle or the data or the interpolation of the Bisp. Can be found in input/')
+            if Cinv.shape[0] != xdata.shape + sum(masktriangle):
+                raise Exception('You want to use the bispectrum but forgot to use the full covariance for power spectrum + Bisp. Can be found in input/Covariance')
+            
+            TermsBisp=Bispinterp((lnAs,Om,h))
+            bval = np.array([1.,b1,b2,b4,b1*b11,b1**2,b1*b2,b1*b4,b1**3,b1**2*b2,b1**2*b4,b8**2])
+            Bisp = 1./(4*np.pi)*np.dot(bval,TermsBisp[3:])
+            
+            modelX = np.concatenate([modelX,Bisp[masktriangle]])
+            ydata = np.concatenate([ydata,Bispdata[masktriangle]])
+            
+        
+        
+        diff  =  (modelX - ydata)
+        step1 = np.dot(Cinv,diff)
+            
+            
+        chi2 = np.dot(diff,step1)
+        return -0.5*chi2
 
 
 def lnprob(theta, xdata, ydata, Cinv, free_para, fix_para,bounds,fiducial,binning=False,TableNkmu=None, window=True,dataQ=None,withBisp=False,masktriangle=None,Bispdata=None):
@@ -581,7 +581,7 @@ if __name__ ==  "__main__":
             if accepted:
                 initialpos.append(trialfiducial)
         pos.append(initialpos)
-        sampler.append(emcee.EnsembleSampler(nwalkers, ndim, lnprob, a = 1.15, args = (xdata, ydata, Cinv, free_para, fix_para,bounds, fiducial), kwargs={'binning':binning,'window':window,'withBisp':withBisp,'dataQ':dataQ, 'masktriangle':masktriangle},threads = 1, pool=pool))
+        sampler.append(emcee.EnsembleSampler(nwalkers, ndim, lnprob, a = 1.15, args = (xdata, ydata, Cinv, free_para, fix_para,bounds, fiducial), kwargs={'binning':binning,'window':window,'withBisp':withBisp,'dataQ':dataQ,'masktriangle':masktriangle,'TableNkmu':TableNkmu,'Bispdata':Bispdata},threads = 1, pool=pool))
         
     np.save(opa.join(OUTPATH,"inipos%sbox_%skmax_%s")%(runtype,boxnumber,kmax),np.array(pos))
     # Start MCMC
@@ -653,7 +653,7 @@ if __name__ ==  "__main__":
     burnin  =  1000
     
     for jj in range(Nchains):
-        np.save(opa.join(OUTPATH,"samplerchain%sbox_%skmax_%srun_%s")%(runtype,boxnumber,kmax,jj),sampler[jj].chain[:20,::10,:])
+        np.save(opa.join(OUTPATH,"samplerchain%sbox_%skmax_%srun_%s")%(runtype,boxnumber,kmax,jj),sampler[jj].chain[:,::5,:])
 
 
     ###################################
