@@ -415,7 +415,7 @@ if __name__ ==  "__main__":
     #For lightcone simulations, need to specify north or south for now (later, merge the two but I'm missing the covariance for SGC
     ZONE = 'NGC'
     
-    boxnumber = 1 #
+    boxnumber = 6 #
     KMAX = 0.2
 
     if ZONE != '':    
@@ -430,7 +430,8 @@ if __name__ ==  "__main__":
     window = True
     binning = False
     masktriangle = None
-
+    TableNkmu = None
+    Bispdata = None
 ##############################
 ###  Priors ###################
 #############################
