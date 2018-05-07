@@ -113,6 +113,8 @@ def get_grid(gridname,nbinsAs=100,nbins = 50, withBisp=False):
     TablePlin = np.load(opa.abspath(opa.join(INPATH_2,'GridsEFT/TablePlin%s.npy'%gridname)))
     TablePloop = np.load(opa.abspath(opa.join(INPATH_2,'GridsEFT/TablePloop%s.npy'%gridname)))
 
+    Plininterp = scipy.interpolate.RegularGridInterpolator((lnAstab,Omtab,htab),TablePlin.reshape((nbinsAs,nbins,nbins,TablePlin.shape[-2],TablePlin.shape[-1])))
+    Ploopinterp = scipy.interpolate.RegularGridInterpolator((lnAstab,Omtab,htab),TablePloop.reshape((nbinsAs,nbins,nbins,TablePloop.shape[-2],TablePloop.shape[-1])))
     interpolations = [Plininterp,Ploopinterp]
     if withBisp:
         TableBisp = np.load(opa.abspath(opa.join(INPATH,'GridsEFT/TableBisp%s.npy'%gridname)))
