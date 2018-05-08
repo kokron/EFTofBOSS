@@ -400,7 +400,7 @@ if __name__ ==  "__main__":
     # Table of cosmological parameters according to sims
 
     dfcosmo = pd.read_csv(opa.join(INPATH,'DataFrameCosmosims.csv'),index_col=0)
-    simtype = "LightConeDida"
+    simtype = "LightConeHector"
     
     
     
@@ -423,7 +423,7 @@ if __name__ ==  "__main__":
     ZONE = 'NGC'
     
     boxnumber = 1 
-    KMAX = 0.2
+    KMAX = 0.25
     kmin = 0.01
     kminbisp = kmin
     kmaxbisp = 0.05
@@ -605,7 +605,7 @@ if __name__ ==  "__main__":
         
     np.save(opa.join(OUTPATH,"inipos%sbox_%skmax_%s")%(runtype,boxnumber,kmax),np.array(pos))
     # Start MCMC
-    print("Running MCMC...")
+    # print("Running MCMC...")
 
     withinchainvar  =  np.zeros((Nchains,ndim))
     meanchain  =  np.zeros((Nchains,ndim))
@@ -616,17 +616,17 @@ if __name__ ==  "__main__":
     itercounter  =  0
     chainstep  =  minlength
     loopcriteria  =  1
-    print("About to start loopcriteria thingy")
+    #print("About to start loopcriteria thingy")
     while loopcriteria:
         
         itercounter  =  itercounter + chainstep
         print("chain length  = ",itercounter," minlength  = ",minlength)
         samplesJG = []
-        print("Going into loop for chains")
+        #print("Going into loop for chains")
         for jj in range(0, Nchains):
             # Since we write the chain to a file we could put storechain = False, but in that case
             # the function sampler.get_autocorr_time() below will give an error
-            print("In loop for chains, advancing sampler")
+            #print("In loop for chains, advancing sampler")
             #change iterations = 1 back to iterations = chainstep
             # print(sampler[jj].shape)
             for result in sampler[jj].sample(pos[jj], iterations = chainstep, rstate0 = rstate, storechain = True, thin = ithin):
@@ -634,14 +634,14 @@ if __name__ ==  "__main__":
                 pos[jj]  =  result[0]
                 chainchi2  =  -2.*result[1]
                 rstate  =  result[2]
-            print("Errors here?, doing convergence test")
+            #print("Errors here?, doing convergence test")
             # we do the convergence test on the second half of the current chain (itercounter/2)
             chainsamples  =  sampler[jj].chain[:, itercounter/2:, :].reshape((-1, ndim))
             #print("len chain  =  ", chainsamples.shape)
             withinchainvar[jj]  =  np.var(chainsamples, axis = 0)
             meanchain[jj]  =  np.mean(chainsamples, axis = 0)
             samplesJG.append(chainsamples)
-            np.save(opa.join(OUTPATH,"ChainsMidway/samplerchainmid%sbox_%skmax_%srun_%s")%(runtype,boxnumber,kmax,jj),sampler[jj].chain[:20,::10,:])
+            np.save(opa.join(OUTPATH,"ChainsMidway/samplerchainmid%sbox_%skmax_%srun_%s")%(runtype,boxnumber,kmax,jj),sampler[jj].chain[:,::10,:])
             # print(jj)
         scalereduction  =  gelman_rubin_convergence(withinchainvar, meanchain, itercounter/2, Nchains, ndim)
         print("scalereduction  =  ", scalereduction)
