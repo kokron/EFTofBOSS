@@ -18,7 +18,7 @@ import pandas as pd
 import os.path as opa
 import time
 from scipy import stats
-from emcee.utils import MPIPool
+# from emcee.utils import MPIPool
 
 ###########################################
 ###  Globals ##############################
@@ -451,7 +451,7 @@ if __name__ ==  "__main__":
     
     runtype = simtype+ZONE
     
-    withBisp = False
+    withBisp = True
     
     if withBisp:
         runtype += 'withBispkmax%s'%kmaxbisp
@@ -578,10 +578,10 @@ if __name__ ==  "__main__":
 
        # Set up the sampler.
     #setting up MPI pool to go with sampler
-    pool = MPIPool()
-    if not pool.is_master():
-        pool.wait()
-        sys.exit(0)
+    # pool = MPIPool()
+    # if not pool.is_master():
+    #     pool.wait()
+    #     sys.exit(0)
 
     Nchains  = 4 
     nwalkers  =  2*nparam
@@ -591,10 +591,11 @@ if __name__ ==  "__main__":
     # Start MCMC
     t0 = time.time()
     temperature  =  1.
-    minlength  = 4000 
+    #change this back afterwards, just test run
+    minlength  = 400 
     ichaincheck  = 50 
     ithin  =  1
-    epsilon  =  0.06
+    epsilon  =  1.06
     # Set up the sampler.
     pos = []
     sampler = []
@@ -617,7 +618,7 @@ if __name__ ==  "__main__":
             if accepted:
                 initialpos.append(trialfiducial)
         pos.append(initialpos)
-        sampler.append(emcee.EnsembleSampler(nwalkers, ndim, lnprob, a = 1.15, args = (xdata, ydata, Cinv, free_para, fix_para,bounds, fiducial), kwargs={'binning':binning,'window':window,'withBisp':withBisp,'dataQ':dataQ,'masktriangle':masktriangle,'TableNkmu':TableNkmu,'Bispdata':Bispdata},threads = 1, pool=pool))
+        sampler.append(emcee.EnsembleSampler(nwalkers, ndim, lnprob, a = 1.15, args = (xdata, ydata, Cinv, free_para, fix_para,bounds, fiducial), kwargs={'binning':binning,'window':window,'withBisp':withBisp,'dataQ':dataQ,'masktriangle':masktriangle,'TableNkmu':TableNkmu,'Bispdata':Bispdata},threads = 16))
         
     np.save(opa.join(OUTPATH,"inipos%sbox_%skmax_%s")%(runtype,boxnumber,kmax),np.array(pos))
     # Start MCMC
