@@ -112,7 +112,7 @@ def get_grid(gridname,nbinsAs=100,nbins = 50, withBisp=False):
 
     TablePlin = np.load(opa.abspath(opa.join(INPATH_2,'GridsEFT/TablePlin%s.npy'%gridname)))
     TablePloop = np.load(opa.abspath(opa.join(INPATH_2,'GridsEFT/TablePloop%s.npy'%gridname)))
-    Tablesigsq = np.load(opa.abspath(opa.join(INPATH,'GridsEFT/Tablesigsq%s.npy'%gridname)))
+    Tablesigsq = np.load(opa.abspath(opa.join(INPATH_2,'GridsEFT/Tablesigsq%s.npy'%gridname)))
 
 
     Plininterp = scipy.interpolate.RegularGridInterpolator((lnAstab,Omtab,htab),TablePlin.reshape((nbinsAs,nbins,nbins,TablePlin.shape[-2],TablePlin.shape[-1])))
@@ -438,7 +438,7 @@ if __name__ ==  "__main__":
     ZONE = 'NGC'
     
     boxnumber = 1 
-    KMAX = 0.25
+    KMAX = 0.2
     kmin = 0.01
     kminbisp = kmin
     kmaxbisp = 0.05
