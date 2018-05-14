@@ -670,7 +670,7 @@ if __name__ ==  "__main__":
 
         chainstep  =  ichaincheck
 
-    pool.close()
+    # pool.close()
     print("Done.")
     trun = time.time()-t0
     print(trun)
