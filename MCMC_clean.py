@@ -438,7 +438,7 @@ if __name__ ==  "__main__":
     ZONE = 'NGC'
     
     boxnumber = 1 
-    KMAX = 0.2
+    KMAX = 0.25
     kmin = 0.01
     kminbisp = kmin
     kmaxbisp = 0.05
@@ -446,7 +446,7 @@ if __name__ ==  "__main__":
     if ZONE != '':    
         dataQ = np.loadtxt(opa.join(INPATH,'Window_functions/dataQ_%s.txt'%ZONE)).T 
     
-    Full_Cov = np.loadtxt(opa.join(INPATH,'Covariance/Cov%s%s.dat'%(simtype,ZONE)))
+    Full_Cov = np.loadtxt(opa.join(INPATH,'Covariance/Cov%s%s_TheoryAugmented.dat'%(simtype,ZONE)))
     
     
     runtype = simtype+ZONE
